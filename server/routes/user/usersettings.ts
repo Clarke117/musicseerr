@@ -25,7 +25,7 @@ import {
 } from '@server/utils/profileMiddleware';
 import { Router } from 'express';
 import net from 'net';
-import { In, Not, type FindOptionsWhere } from 'typeorm';
+import { Not, type FindOptionsWhere } from 'typeorm';
 import { canMakePermissionsChange } from '.';
 
 const userSettingsRoutes = Router({ mergeParams: true });
@@ -331,6 +331,7 @@ userSettingsRoutes.delete<{ id: string }>(
       const user = await userRepository
         .createQueryBuilder('user')
         .addSelect('user.password')
+        .leftJoinAndSelect('user.linkedAccounts', 'linkedAccounts')
         .where({
           id: Number(req.params.id),
         })
@@ -347,11 +348,7 @@ userSettingsRoutes.delete<{ id: string }>(
         });
       }
 
-      const linkedAccountsRepository = getRepository(LinkedAccount);
-      const oidcAccountCount = await linkedAccountsRepository.count({
-        where: { user: { id: user.id } },
-      });
-      if (!user.password && oidcAccountCount === 0) {
+      if (!user.password && user.getActiveLinkedAccounts().length === 0) {
         return res.status(400).json({
           message:
             'User does not have a local password or other linked account.',
@@ -490,6 +487,7 @@ userSettingsRoutes.delete<{ id: string }>(
       const user = await userRepository
         .createQueryBuilder('user')
         .addSelect('user.password')
+        .leftJoinAndSelect('user.linkedAccounts', 'linkedAccounts')
         .where({
           id: Number(req.params.id),
         })
@@ -506,11 +504,7 @@ userSettingsRoutes.delete<{ id: string }>(
         });
       }
 
-      const linkedAccountsRepository = getRepository(LinkedAccount);
-      const oidcAccountCount = await linkedAccountsRepository.count({
-        where: { user: { id: user.id } },
-      });
-      if (!user.password && oidcAccountCount === 0) {
+      if (!user.password && user.getActiveLinkedAccounts().length === 0) {
         return res.status(400).json({
           message:
             'User does not have a local password or other linked account.',
@@ -536,27 +530,19 @@ userSettingsRoutes.get<{ id: string }, UserSettingsLinkedAccountResponse>(
   isOwnProfileOrAdmin(),
   async (req, res) => {
     const settings = getSettings();
-    if (!settings.main.oidcLogin) {
-      // don't show any linked accounts if OIDC login is disabled
-      return res.status(200).json([]);
+    const userRepository = getRepository(User);
+
+    const user = await userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.linkedAccounts', 'linkedAccounts')
+      .where({ id: Number(req.params.id) })
+      .getOne();
+
+    if (!user) {
+      return res.status(404).send();
     }
 
-    const activeProviders = settings.oidc.providers.map((p) => p.slug);
-    const linkedAccountsRepository = getRepository(LinkedAccount);
-
-    const linkedAccounts = await linkedAccountsRepository.find({
-      relations: {
-        user: true,
-      },
-      where: {
-        provider: In(activeProviders),
-        user: {
-          id: Number(req.params.id),
-        },
-      },
-    });
-
-    const linkedAccountInfo = linkedAccounts.map((acc) => {
+    const linkedAccountInfo = user.getActiveLinkedAccounts().map((acc) => {
       const provider = settings.oidc.providers.find(
         (p) => p.slug === acc.provider
       )!;
@@ -596,9 +582,9 @@ userSettingsRoutes.delete<{ id: string; acctId: string }>(
       return res.status(404).send();
     }
 
-    const remainingOidcCount = user.linkedAccounts.filter(
-      (a) => a.id !== acctId
-    ).length;
+    const remainingOidcCount = user
+      .getActiveLinkedAccounts()
+      .filter((a) => a.id !== acctId).length;
     const hasMediaServer =
       (settings.main.mediaServerType === MediaServerType.PLEX &&
         !!user.plexId) ||
