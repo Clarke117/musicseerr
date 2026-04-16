@@ -61,6 +61,7 @@ interface ArtistData {
 const MusicArtistDetails = () => {
   const router = useRouter();
   const intl = useIntl();
+  const [albumFilter, setAlbumFilter] = useState<string>('albums');
 
   const { data, error } = useSWR<ArtistData>(
     router.query.artistId
@@ -105,8 +106,6 @@ const MusicArtistDetails = () => {
         ))
     );
   }
-
-  const [albumFilter, setAlbumFilter] = useState<string>('albums');
 
   // Sort albums by date descending
   const allAlbums = [...(data.albums ?? [])].sort((a, b) => {
