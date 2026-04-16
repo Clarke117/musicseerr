@@ -1,0 +1,20 @@
+services:
+  musicseerr:
+    image: ghcr.io/clarke117/musicseerr:latest
+    container_name: musicseerr
+    restart: unless-stopped
+    ports:
+      # 5757 chosen so it never collides with Jellyseerr/Overseerr/Seerr (5055).
+      - "5757:5757"
+    environment:
+      PORT: "5757"
+      TZ: Europe/Dublin
+      # Optional — only needed if you want artist images / bios:
+      # FANART_API_KEY: your_fanart_api_key
+      # LASTFM_API_KEY: your_lastfm_api_key
+    volumes:
+      - /DATA/AppData/musicseerr/config:/app/config
+    labels:
+      icon: https://raw.githubusercontent.com/Clarke117/musicseerr/main/public/os_icon.svg
+      title.en_us: MusicSeerr
+      tagline.en_us: Music request and discovery for Lidarr
