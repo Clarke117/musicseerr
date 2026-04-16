@@ -4,7 +4,7 @@ import Tag from '@app/components/Common/Tag';
 import TitleCard from '@app/components/TitleCard';
 import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
-import { MusicalNoteIcon, UserIcon } from '@heroicons/react/24/outline';
+import { UserIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
