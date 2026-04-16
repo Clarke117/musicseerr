@@ -4,6 +4,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import TitleCard from '@app/components/TitleCard';
 import defineMessages from '@app/utils/defineMessages';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import type { MediaStatus } from '@server/constants/media';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -30,7 +31,7 @@ interface MusicSearchResult {
   genres?: string[];
   mediaInfo?: {
     id: number;
-    status: number;
+    status: MediaStatus;
     downloadStatus?: unknown[];
   };
 }

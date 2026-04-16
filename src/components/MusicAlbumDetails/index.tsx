@@ -74,7 +74,7 @@ interface AlbumData {
   };
   mediaInfo?: {
     id: number;
-    status: number;
+    status: MediaStatus;
     requests: unknown[];
     downloadStatus: DownloadingItem[];
     serviceUrl?: string;

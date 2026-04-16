@@ -2,6 +2,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import TitleCard from '@app/components/TitleCard';
 import defineMessages from '@app/utils/defineMessages';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import type { MediaStatus } from '@server/constants/media';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -23,7 +24,7 @@ interface RecentRequest {
     id: number;
     musicBrainzId?: string;
     mediaType: string;
-    status: number;
+    status: MediaStatus;
   };
   musicBrainzId?: string;
   albumTitle?: string;
@@ -42,7 +43,7 @@ interface RecentlyAddedAlbum {
   posterUrl: string | null;
   mediaInfo: {
     id: number;
-    status: number;
+    status: MediaStatus;
   };
 }
 

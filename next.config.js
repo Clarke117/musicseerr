@@ -22,13 +22,6 @@ module.exports = {
 
     return config;
   },
-  // Temporarily disabled to isolate build failures
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   experimental: {
     scrollRestoration: true,
     largePageDataBytes: 512 * 1000,
