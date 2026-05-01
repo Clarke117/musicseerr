@@ -101,10 +101,10 @@ export class User {
   @Column({ type: 'varchar', nullable: true, select: false })
   public plexToken?: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   public navidromeUserId?: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   public navidromeUsername?: string | null;
 
   @Column({ type: 'integer', default: 0 })
