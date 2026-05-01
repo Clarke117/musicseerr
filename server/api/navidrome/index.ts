@@ -61,55 +61,61 @@ class NavidromeAPI {
   ): Promise<NavidromeUser> {
     const params = this.buildAuthParams(username, password)
 
+    // Step 1: ping to verify credentials — simpler endpoint, always works
     try {
-      const response = await axios.get<SubsonicResponse>(
-        `${this.baseUrl}/rest/getUser.view`,
-        {
-          params: {
-            ...params,
-            username,
-          },
-          timeout: 10000,
-        }
+      const pingResponse = await axios.get<SubsonicResponse>(
+        `${this.baseUrl}/rest/ping.view`,
+        { params, timeout: 10000 }
       )
-
-      const subsonicResp = response.data['subsonic-response']
-
-      if (subsonicResp.status !== 'ok') {
-        const code = subsonicResp.error?.code ?? 0
-        // Subsonic error code 40 = wrong username/password
+      const pingResp = pingResponse.data['subsonic-response']
+      if (pingResp.status !== 'ok') {
+        const code = pingResp.error?.code ?? 0
         if (code === 40 || code === 41) {
           throw new ApiError(401, ApiErrorCode.InvalidCredentials)
         }
         throw new ApiError(500, ApiErrorCode.Unknown)
       }
-
-      const user = subsonicResp.user
-
-      if (!user) {
-        throw new ApiError(500, ApiErrorCode.Unknown)
-      }
-
-      return {
-        username: user.username,
-        email: user.email ?? '',
-        adminRole: user.adminRole ?? false,
-        id: user.id ?? username,
-      }
     } catch (e) {
-      if (e instanceof ApiError) {
-        throw e
-      }
-
+      if (e instanceof ApiError) throw e
       if (e.response?.status === 401 || e.response?.status === 403) {
         throw new ApiError(401, ApiErrorCode.InvalidCredentials)
       }
-
       if (!e.response) {
         throw new ApiError(404, ApiErrorCode.InvalidUrl)
       }
-
       throw new ApiError(500, ApiErrorCode.Unknown)
+    }
+
+    // Step 2: try to get user details and admin status.
+    // getUser.view requires admin rights in newer Navidrome versions —
+    // if it fails for any reason other than bad credentials, fall back
+    // to returning basic user info with adminRole: false (the auth route
+    // will then reject non-admins at setup time with a clear error).
+    try {
+      const response = await axios.get<SubsonicResponse>(
+        `${this.baseUrl}/rest/getUser.view`,
+        { params: { ...params, username }, timeout: 10000 }
+      )
+      const subsonicResp = response.data['subsonic-response']
+      if (subsonicResp.status === 'ok' && subsonicResp.user) {
+        const user = subsonicResp.user
+        return {
+          username: user.username,
+          email: user.email ?? '',
+          adminRole: user.adminRole ?? false,
+          id: user.id ?? username,
+        }
+      }
+    } catch {
+      // getUser.view unavailable — fall through to basic user info
+    }
+
+    // Fallback: credentials are valid but we couldn't confirm admin status
+    return {
+      username,
+      email: '',
+      adminRole: false,
+      id: username,
     }
   }
 

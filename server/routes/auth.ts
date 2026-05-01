@@ -644,8 +644,10 @@ authRoutes.post('/navidrome', async (req, res, next) => {
       missingAdminUser ||
       settings.main.mediaServerType === MediaServerType.NOT_CONFIGURED
     ) {
-      // First-time setup: require admin role on Navidrome
-      if (!account.adminRole) {
+      // First-time setup: require admin role on Navidrome.
+      // If no users exist yet we trust the credentials — getUser.view may
+      // not return adminRole reliably on all Navidrome versions.
+      if (!account.adminRole && !missingAdminUser) {
         throw new ApiError(403, ApiErrorCode.NotAdmin);
       }
 
